@@ -1,0 +1,151 @@
+"""IIMK EPGP Calender App
+
+The app get session details form a google sheet and renders an ics
+The google sheet is expected to have the following columns
+
+Sec - Section detail - A to F
+Code - Format: EPGP-203
+Course Name - Format: Economic Environment (EE)
+Session - Serial Number - 1 , 2, 3, etc. Quiz sessions will be 11, 12, 13 etc.
+Date - Format: 08-Mar-25
+Time - Format: 9:00 AM to 11:45 AM in IST
+"""
+
+from flask import Flask, Response, render_template, abort
+from datetime import datetime, timedelta
+import pytz
+import csv
+import requests
+
+app = Flask(__name__)
+
+DOMAIN = "subinabid.pythonanywhere.com"
+GOOGLE_SHEET_ID = "1u58baEOOeJYAQ2AnIMWWpCSjxVKg6Do557Qerm_Rqok"
+VALID_CALENDARS = [f"epgp17{suffix}" for suffix in "abcdef"]
+
+
+def get_events_from_tab(tab_name):
+    """Get session details from the google sheet"""
+    # Build the CSV export URL
+    csv_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab_name.upper()}"
+
+    # Fetch the CSV content
+    response = requests.get(csv_url)
+    response.raise_for_status()
+
+    # Parse CSV rows
+    reader = csv.DictReader(response.text.splitlines())
+    events = []
+
+    for row in reader:
+        try:
+            # Handle buffers and holidays
+            if row["Code"] == "" or row["Session"] == "":
+                print(f"Code or Session Error: Skipping Empty row: {row}")
+                continue
+
+            # Extract and convert fields
+            event_date = row.get("Date", "").strip()
+            event_time = row.get("Time", "").strip()
+
+            # Split the time range
+            start_str, end_str = [t.strip() for t in event_time.split("to")]
+
+            # Combine with date and parse as IST datetime
+            start_ist = datetime.strptime(
+                f"{event_date} {start_str}", "%d-%b-%y %I:%M %p"
+            )
+            end_ist = datetime.strptime(f"{event_date} {end_str}", "%d-%b-%y %I:%M %p")
+
+            # Convert IST to UTC (subtract 5 hours 30 minutes)
+            start_utc = start_ist - timedelta(hours=5, minutes=30)
+            end_utc = end_ist - timedelta(hours=5, minutes=30)
+
+            # Format for ICS (UTC time, Z suffix)
+            dtstart = start_utc.strftime("%Y%m%dT%H%M%SZ")
+            dtend = end_utc.strftime("%Y%m%dT%H%M%SZ")
+
+            event = {
+                "id": f"{row['Code'].strip()}-{row['Sec']}-{row['Session'].strip()}@iimcal.sabid.in",
+                "title": row["Course Name"].strip(),
+                "description": row.get("Course Name", "").strip(),
+                "location": "Online",
+                "start": dtstart,
+                "end": dtend,
+            }
+
+            events.append(event)
+
+        except Exception as e:
+            # Optionally log or skip invalid rows
+            print(f"Skipping invalid row: {row}\nReason: {e}")
+
+    return events
+
+
+def format_ics_datetime(dt_str):
+    dt = datetime.fromisoformat(dt_str)
+    return dt.astimezone(pytz.UTC).strftime("%Y%m%dT%H%M%SZ")
+
+
+################################################################################
+# Routes
+################################################################################
+
+
+@app.route("/<calendar_id>.ics")
+def serve_calendar(calendar_id):
+    """Section Calendars"""
+    if calendar_id not in VALID_CALENDARS:
+        abort(404, description="Calendar not found")
+
+    events = get_events_from_tab(calendar_id)
+
+    ics = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "CALSCALE:GREGORIAN",
+        f"PRODID:-//IIMCal//{calendar_id.upper()} Calendar//EN",
+    ]
+
+    for event in events:
+        ics.extend(
+            [
+                "BEGIN:VEVENT",
+                f"UID:{event['id']}@iimcal.sabid.in",
+                f"DTSTAMP:{format_ics_datetime(datetime.utcnow().isoformat())}",
+                f"DTSTART:{format_ics_datetime(event['start'])}",
+                f"DTEND:{format_ics_datetime(event['end'])}",
+                f"SUMMARY:{event['title']}",
+                f"DESCRIPTION:{event['description']}",
+                f"LOCATION:{event['location']}",
+                "END:VEVENT",
+            ]
+        )
+
+    ics.append("END:VCALENDAR")
+    ics_data = "\r\n".join(ics)
+
+    return Response(
+        ics_data,
+        mimetype="text/calendar",
+        headers={"Content-Disposition": f"attachment; filename={calendar_id}.ics"},
+    )
+
+
+@app.route("/")
+def home():
+    """Home Page"""
+    sections = VALID_CALENDARS  # ['epgp17a', 'epgp17b', ...]
+    return render_template("index.html", sections=sections, domain=DOMAIN)
+
+
+@app.route("/test")
+def test():
+    """Test Page"""
+    tab_name = "EPGP17A"
+    return get_events_from_tab(tab_name)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
