@@ -13,15 +13,26 @@ Time - Format: 9:00 AM to 11:45 AM in IST
 
 from flask import Flask, Response, render_template, abort
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 import pytz
 import csv
 import requests
+import os
 
 app = Flask(__name__)
+load_dotenv()
+
+################################################################################
+# Configuration
+################################################################################
 
 DOMAIN = "subinabid.pythonanywhere.com"
-GOOGLE_SHEET_ID = "1u58baEOOeJYAQ2AnIMWWpCSjxVKg6Do557Qerm_Rqok"
+GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 VALID_CALENDARS = [f"epgp17{suffix}" for suffix in "abcdef"]
+
+################################################################################
+# Helper Functions
+################################################################################
 
 
 def get_events_from_tab(tab_name):
@@ -41,7 +52,7 @@ def get_events_from_tab(tab_name):
         try:
             # Handle buffers and holidays
             if row["Code"] == "" or row["Session"] == "":
-                print(f"Code or Session Error: Skipping Empty row: {row}")
+                # print(f"Code or Session Error: Skipping Empty row: {row}")
                 continue
 
             # Extract and convert fields
@@ -88,19 +99,8 @@ def format_ics_datetime(dt_str):
     return dt.astimezone(pytz.UTC).strftime("%Y%m%dT%H%M%SZ")
 
 
-################################################################################
-# Routes
-################################################################################
-
-
-@app.route("/<calendar_id>.ics")
-def serve_calendar(calendar_id):
-    """Section Calendars"""
-    if calendar_id not in VALID_CALENDARS:
-        abort(404, description="Calendar not found")
-
-    events = get_events_from_tab(calendar_id)
-
+def generate_ics(calendar_id, events):
+    """Generate ICS data for a given calendar and events"""
     ics = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
@@ -124,13 +124,12 @@ def serve_calendar(calendar_id):
         )
 
     ics.append("END:VCALENDAR")
-    ics_data = "\r\n".join(ics)
+    return "\r\n".join(ics)
 
-    return Response(
-        ics_data,
-        mimetype="text/calendar",
-        headers={"Content-Disposition": f"attachment; filename={calendar_id}.ics"},
-    )
+
+################################################################################
+# Routes
+################################################################################
 
 
 @app.route("/")
@@ -140,11 +139,32 @@ def home():
     return render_template("index.html", sections=sections, domain=DOMAIN)
 
 
+@app.route("/<calendar_id>.ics")
+def serve_calendar(calendar_id):
+    """Serve Section Calendars as ICS"""
+    if calendar_id not in VALID_CALENDARS:
+        abort(404, description="Calendar not found")
+
+    events = get_events_from_tab(calendar_id)
+    ics_data = generate_ics(calendar_id, events)
+
+    return Response(
+        ics_data,
+        mimetype="text/calendar",
+        headers={"Content-Disposition": f"attachment; filename={calendar_id}.ics"},
+    )
+
+
 @app.route("/test")
 def test():
     """Test Page"""
     tab_name = "EPGP17A"
     return get_events_from_tab(tab_name)
+
+
+################################################################################
+# Main Entry Point
+################################################################################
 
 
 if __name__ == "__main__":
