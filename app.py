@@ -11,13 +11,13 @@ Date - Format: 08-Mar-25
 Time - Format: 9:00 AM to 11:45 AM in IST
 """
 
+import os
 from flask import Flask, Response, render_template, abort
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-import pytz
+import pytz  # type: ignore
 import csv
-import requests
-import os
+import requests  # type: ignore
 
 app = Flask(__name__)
 load_dotenv()
