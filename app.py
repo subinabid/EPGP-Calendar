@@ -35,10 +35,8 @@ VALID_CALENDARS = [f"epgp17{suffix}" for suffix in "abcdef"]
 ################################################################################
 
 
-def get_events_from_tab(tab_name):
-    """Get session details from the google sheet"""
-    # Build the CSV export URL
-    csv_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab_name.upper()}"
+def handle_events(csv_url):
+    """Handle events from the CSV URL"""
 
     # Fetch the CSV content
     response = requests.get(csv_url)
@@ -63,10 +61,25 @@ def get_events_from_tab(tab_name):
             start_str, end_str = [t.strip() for t in event_time.split("to")]
 
             # Combine with date and parse as IST datetime
-            start_ist = datetime.strptime(
-                f"{event_date} {start_str}", "%d-%b-%y %I:%M %p"
-            )
-            end_ist = datetime.strptime(f"{event_date} {end_str}", "%d-%b-%y %I:%M %p")
+            try:
+                start_ist = datetime.strptime(
+                    f"{event_date} {start_str}", "%d-%b-%y %I:%M %p"
+                )
+            except ValueError:
+                # If the first format fails, try the second format
+                # This is a fallback in case the date format is different
+                start_ist = datetime.strptime(
+                    f"{event_date} {start_str}", "%d-%B-%y %I:%M %p"
+                )
+
+            try:
+                end_ist = datetime.strptime(
+                    f"{event_date} {end_str}", "%d-%b-%y %I:%M %p"
+                )
+            except ValueError:
+                end_ist = datetime.strptime(
+                    f"{event_date} {end_str}", "%d-%B-%y %I:%M %p"
+                )
 
             # Convert IST to UTC (subtract 5 hours 30 minutes)
             start_utc = start_ist - timedelta(hours=5, minutes=30)
@@ -92,6 +105,22 @@ def get_events_from_tab(tab_name):
             print(f"Skipping invalid row: {row}\nReason: {e}")
 
     return events
+
+
+def get_classes(tab_name):
+    """Get session details from the google sheet"""
+    # Build the CSV export URL
+    csv_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab_name.upper()}"
+
+    return handle_events(csv_url)
+
+
+def get_exams():
+    """Get exam details from the google sheet"""
+    # Build the CSV export URL
+    csv_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=EXAMS"
+
+    return handle_events(csv_url)
 
 
 def format_ics_datetime(dt_str):
@@ -145,7 +174,9 @@ def serve_calendar(calendar_id):
     if calendar_id not in VALID_CALENDARS:
         abort(404, description="Calendar not found")
 
-    events = get_events_from_tab(calendar_id)
+    events = get_classes(calendar_id)
+    exams = get_exams()
+    events.extend(exams)
     ics_data = generate_ics(calendar_id, events)
 
     return Response(
@@ -158,14 +189,16 @@ def serve_calendar(calendar_id):
 @app.route("/test")
 def test():
     """Test Page"""
-    tab_name = "EPGP17A"
-    return get_events_from_tab(tab_name)
+    tab_name = "EPGP17B"
+    events = get_classes(tab_name)
+    exams = get_exams()
+    events.extend(exams)
+    return events
 
 
 ################################################################################
-# Main Entry Point
+# Entry Point
 ################################################################################
-
 
 if __name__ == "__main__":
     app.run(debug=True)
