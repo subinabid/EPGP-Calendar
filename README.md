@@ -13,7 +13,7 @@ The sheet is expected to have differnet tabs for each section and a tab for exam
 - Sec -> Section detail - A to F
 - Code -> Format: EPGP-203
 - Course Name -> Format: Economic Environment (EE)
-- Session -> Serial Number - 1 , 2, 3, etc. Quiz sessions will be 31, 32, 33 etc. Assignments will have sl numbers starting with 71
+- Session -> Serial Number - 1 , 2, 3, etc. Quiz sessions will be 31, 32, 33 etc. Assignments will have sl numbers starting with 51 and exams from 71
 - Date -> Format: 08-Mar-25
 - Time -> Format: 9:00 AM to 11:45 AM (in IST)
 
@@ -36,7 +36,6 @@ The following endpints are available for different batches:
 - epgp17e
 - epgp17f
 
-
 ### Subscribing to the calendar
 
-Apple / outlook can directly sunscribe to the calendars at click of a button. Google calendar has to use the URL to subscribe to. 
+Apple / outlook can directly subscribe to the calendars at click of a button. Google calendar has to use the URL to subscribe to. 
