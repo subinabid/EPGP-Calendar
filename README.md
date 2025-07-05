@@ -8,7 +8,7 @@ Data is currently maintained for 17th batch only.
 
 ## Google Sheet
 
-The sheet is expected to have differnet tabs for each section and a tab for exam. Each tab shall have the following columns
+The sheet is expected to have differnet tabs for each section, a tab for common events and a tab for exam. Each tab shall have the following columns
 
 - Sec -> Section detail - A to F
 - Code -> Format: EPGP-203
@@ -17,11 +17,13 @@ The sheet is expected to have differnet tabs for each section and a tab for exam
 - Date -> Format: 08-Mar-25
 - Time -> Format: 9:00 AM to 11:45 AM (in IST)
 
+Google sheet id is stored as an environment variable
+
 ## App details
 
 The app is written in Flask.
 
-Data from the sheet is imported in `CSV` format and parsed as a `dict`. Valid rows (Rows with code and session detail) are extracted. This excludes buffers and holidays. Each row is converted to a calendar event. The data is converted to ICS format and returned to the calller.
+Data from the sheet is imported in `CSV` format and parsed as a `dict`. Valid rows (Rows with code and session detail) are extracted. This excludes buffers and holidays. Each row is converted to a calendar event. The data is converted to ICS format and returned to the caller.
 
 ## Return format
 
@@ -38,4 +40,4 @@ The following endpints are available for different batches:
 
 ### Subscribing to the calendar
 
-Apple / outlook can directly subscribe to the calendars at click of a button. Google calendar has to use the URL to subscribe to. 
+Apple / outlook can directly subscribe to the calendars at click of a button. Google calendar has to use the URL to subscribe.

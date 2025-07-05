@@ -89,11 +89,16 @@ def handle_events(csv_url):
             dtstart = start_utc.strftime("%Y%m%dT%H%M%SZ")
             dtend = end_utc.strftime("%Y%m%dT%H%M%SZ")
 
+            # Get location info
+            location = row.get("Location", "").strip()
+            if not location:
+                location = "Online"
+
             event = {
                 "id": f"{row['Code'].strip()}-{row['Sec']}-{row['Session'].strip()}@iimcal.sabid.in",
                 "title": row["Course Name"].strip(),
                 "description": row.get("Course Name", "").strip(),
-                "location": "Online",
+                "location": location,
                 "start": dtstart,
                 "end": dtend,
             }
@@ -119,6 +124,14 @@ def get_exams():
     """Get exam details from the google sheet"""
     # Build the CSV export URL
     csv_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=EXAMS"
+
+    return handle_events(csv_url)
+
+
+def get_general_events():
+    """Get general events from the google sheet"""
+    # Build the CSV export URL
+    csv_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=GENERAL"
 
     return handle_events(csv_url)
 
@@ -177,6 +190,8 @@ def serve_calendar(calendar_id):
     events = get_classes(calendar_id)
     exams = get_exams()
     events.extend(exams)
+    general_events = get_general_events()
+    events.extend(general_events)
     ics_data = generate_ics(calendar_id, events)
 
     return Response(
