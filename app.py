@@ -58,9 +58,17 @@ def handle_events(csv_url):
             event_time = row.get("Time", "").strip()
 
             # Split the time range
-            start_str, end_str = [t.strip() for t in event_time.split("to")]
+            if "to" in event_time:
+                # Assuming the time is in the format "9:00 AM to 11:45 AM"
+                start_str, end_str = [t.strip() for t in event_time.split("to")]
+            elif "-" in event_time:
+                # Assuming the time is in the format "9:00 AM - 11:45 AM"
+                start_str, end_str = [t.strip() for t in event_time.split("-")]
+            else:
+                print(f"Time format error: {event_time}")
+                print(f"Skipping row: {row} \nReason: Invalid time format")
+                continue
 
-            # Combine with date and parse as IST datetime
             try:
                 start_ist = datetime.strptime(
                     f"{event_date} {start_str}", "%d-%b-%y %I:%M %p"
