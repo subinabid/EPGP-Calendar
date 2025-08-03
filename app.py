@@ -35,7 +35,7 @@ VALID_CALENDARS = [f"epgp17{suffix}" for suffix in "abcdef"]
 ################################################################################
 
 
-def handle_events(csv_url):
+def handle_events(csv_url, includeSessionCount=False):
     """Handle events from the CSV URL"""
 
     # Fetch the CSV content
@@ -102,9 +102,19 @@ def handle_events(csv_url):
             if not location:
                 location = "Online"
 
+            if includeSessionCount:
+                # Include session count in the title if requested
+                session_count = row.get("Session", "").strip()
+                if session_count:
+                    title = f"{row['Course Name'].strip()} - Session {session_count}"
+                else:
+                    title = row["Course Name"].strip()
+            else:
+                title = row["Course Name"].strip()
+
             event = {
                 "id": f"{row['Code'].strip()}-{row['Sec']}-{row['Session'].strip()}@iimcal.sabid.in",
-                "title": row["Course Name"].strip(),
+                "title": title,
                 "description": row.get("Course Name", "").strip(),
                 "location": location,
                 "start": dtstart,
@@ -125,7 +135,7 @@ def get_classes(tab_name):
     # Build the CSV export URL
     csv_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab_name.upper()}"
 
-    return handle_events(csv_url)
+    return handle_events(csv_url, includeSessionCount=True)
 
 
 def get_exams():
@@ -196,10 +206,8 @@ def serve_calendar(calendar_id):
         abort(404, description="Calendar not found")
 
     events = get_classes(calendar_id)
-    exams = get_exams()
-    events.extend(exams)
-    general_events = get_general_events()
-    events.extend(general_events)
+    events.extend(get_exams())
+    events.extend(get_general_events())
     ics_data = generate_ics(calendar_id, events)
 
     return Response(
@@ -214,8 +222,8 @@ def test():
     """Test Page"""
     tab_name = "EPGP17B"
     events = get_classes(tab_name)
-    exams = get_exams()
-    events.extend(exams)
+    events.extend(get_exams())
+    events.extend(get_general_events())
     return events
 
 
