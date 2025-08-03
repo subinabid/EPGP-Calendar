@@ -6,7 +6,7 @@ The google sheet is expected to have the following columns
 Sec - Section detail - A to F
 Code - Format: EPGP-203
 Course Name - Format: Economic Environment (EE)
-Session - Serial Number - 1 , 2, 3, etc. Quiz sessions will be 11, 12, 13 etc.
+Session - Serial Number - 1 , 2, 3, etc. Quiz sessions will be 31, 32, 33 etc. Assignments will be 51, 52, etc.
 Date - Format: 08-Mar-25
 Time - Format: 9:00 AM to 11:45 AM in IST
 """
@@ -102,10 +102,14 @@ def handle_events(csv_url, includeSessionCount=False):
             if not location:
                 location = "Online"
 
+            # Include session count in the title if requested
             if includeSessionCount:
-                # Include session count in the title if requested
                 session_count = row.get("Session", "").strip()
-                if session_count:
+                if (
+                    session_count
+                    and session_count.isdigit()
+                    and int(session_count) < 30  # Sessions < 30 are regular sessions
+                ):
                     title = f"{row['Course Name'].strip()} - Session {session_count}"
                 else:
                     title = row["Course Name"].strip()
@@ -115,7 +119,7 @@ def handle_events(csv_url, includeSessionCount=False):
             event = {
                 "id": f"{row['Code'].strip()}-{row['Sec']}-{row['Session'].strip()}@iimcal.sabid.in",
                 "title": title,
-                "description": row.get("Course Name", "").strip(),
+                "description": title,
                 "location": location,
                 "start": dtstart,
                 "end": dtend,
@@ -220,7 +224,7 @@ def serve_calendar(calendar_id):
 @app.route("/test")
 def test():
     """Test Page"""
-    tab_name = "EPGP17B"
+    tab_name = "EPGP17T"
     events = get_classes(tab_name)
     events.extend(get_exams())
     events.extend(get_general_events())
