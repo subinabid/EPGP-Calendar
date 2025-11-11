@@ -197,9 +197,12 @@ def get_electives_list(term):
             electives[code] = {
                 "area": row.get("Area", "").strip(),
                 "course": row.get("Course", "").strip(),
-                "faculty": row.get("Faculty", "").strip(),
+                "faculty": [row.get("Faculty", "").strip()],
                 "track": row.get("Track", "").strip(),
             }
+        elif code:
+            if row.get("Faculty", "").strip() not in electives[code]["faculty"]:
+                electives[code]["faculty"].append(row.get("Faculty", "").strip())
 
     return electives
 

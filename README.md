@@ -19,7 +19,7 @@ The sheet is expected to have differnet tabs for each section, a tab for common 
 
 Google sheet id is stored as an environment variable
 
-## Google Sheet for elctives
+## Google Sheet for electives
 
 - Sl
 - Faculty -> Name of the faculty

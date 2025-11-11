@@ -62,7 +62,11 @@
                         </td>
                         <td class="px-4 py-2">{{ details.course }}</td>
                         <td class="px-4 py-2">{{ details.area }}</td>
-                        <td class="px-4 py-2">{{ details.faculty }}</td>
+                        <td class="px-4 py-2">
+                            {% for faculty in details.faculty %}
+                            {{ faculty }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
                         <td class="px-4 py-2">{{ details.track }}</td>
                         <!-- Apple/Outlook -->
                         <td class="px-4 py-2">
