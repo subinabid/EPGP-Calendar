@@ -19,6 +19,22 @@ The sheet is expected to have differnet tabs for each section, a tab for common 
 
 Google sheet id is stored as an environment variable
 
+## Google Sheet for elctives
+
+- Sl
+- Faculty -> Name of the faculty
+- Track
+- Area
+- Code
+- Code1 -> Code suffixed with section code A, B etc
+- Session -> Serial Number - 1 , 2, 3, etcß
+- Course
+- Date -> Format MM-DD-YYYY
+- Week Day
+- Month
+- Time -> Format: 9:00 AM to 11:45 AM (in IST)
+- Remarks
+
 ## App details
 
 The app is written in Flask.
