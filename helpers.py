@@ -12,29 +12,28 @@ from config import GOOGLE_SHEET_ID, VALID_CALENDARS, VALID_TERMS, ELECTIVE_TERMS
 ################################################################################
 
 
-def validate_calendar(calendar_id):
+def validate_calendar(calendar_id: str) -> None:
     """Validate the calendar ID"""
     if calendar_id not in VALID_CALENDARS:
         abort(404, description="Calendar not found")
 
 
-def validate_term_course(term):
+def validate_term_course(term: str) -> bool:
     """Validate the term for courses"""
     return term.lower() in VALID_TERMS
 
 
-def validate_term_elective(term):
+def validate_term_elective(term: str) -> bool:
     """Validate if the term has electives"""
     return term.lower() in ELECTIVE_TERMS
 
 
-def validate_term(term):
+def validate_term(term: str) -> None:
     """Validate the term"""
     if not validate_term_elective(term):
         abort(404, description="Term does not have electives")
     if not validate_term_course(term):
         abort(404, description="Invalid Term")
-    return True
 
 
 ################################################################################
@@ -42,7 +41,7 @@ def validate_term(term):
 ################################################################################
 
 
-def get_csv(csv_url):
+def get_csv(csv_url: str) -> csv.DictReader:
     """Fetch CSV content from a URL and return a DictReader"""
     # Fetch the CSV content
     response = requests.get(csv_url)
@@ -74,6 +73,30 @@ def get_general_events():
     csv_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=GENERAL"
 
     return handle_events(csv_url)
+
+
+# def get_complete_class_schedule(tab_name: str) -> list[dict]:
+#     """Get schedule for a specific class"""
+#     # Build the CSV import URLs
+#     class_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab_name.upper()}"
+#     general_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=GENERAL"
+#     exam_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=EXAMS"
+
+#     # Fetch the CSV content as a dict
+#     reader_class = get_csv(class_url)
+#     reader_general = get_csv(general_url)
+#     reader_exam = get_csv(exam_url)
+
+#     schedule = list()
+
+#     for row in reader_class:
+#         schedule.append(row)
+#     for row in reader_general:
+#         schedule.append(row)
+#     for row in reader_exam:
+#         schedule.append(row)
+
+#     return schedule
 
 
 def handle_events(csv_url, includeSessionCount=False):
@@ -180,7 +203,7 @@ def handle_events(csv_url, includeSessionCount=False):
 ################################################################################
 
 
-def get_electives_list(term):
+def get_electives_list(term: str) -> dict:
     """Get elective details from the google sheet"""
     # Build the CSV export URL
     csv_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet={term.upper()}"
@@ -188,7 +211,7 @@ def get_electives_list(term):
     # Fetch the CSV content as a dict
     reader = get_csv(csv_url)
     sorted_reader = sorted(reader, key=lambda x: x.get("Code1", "").strip())
-    electives = dict()
+    electives: dict = dict()
 
     # Generate electives dict
     for row in sorted_reader:
@@ -207,7 +230,7 @@ def get_electives_list(term):
     return electives
 
 
-def get_elective_schedule(term, code):
+def get_elective_schedule(term: str, code: str) -> list[dict]:
     """Get schedule for a specific elective"""
     # Build the CSV export URL
     csv_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet={term.upper()}"
@@ -227,7 +250,7 @@ def get_elective_schedule(term, code):
     return schedule
 
 
-def handle_elective(term, code):
+def handle_elective(term: str, code: str) -> list[dict]:
     """Handle elective events from the CSV URL"""
 
     # Fetch the CSV content as dict
@@ -292,12 +315,12 @@ def handle_elective(term, code):
 ################################################################################
 
 
-def format_ics_datetime(dt_str):
+def format_ics_datetime(dt_str: str) -> str:
     dt = datetime.fromisoformat(dt_str)
     return dt.astimezone(pytz.UTC).strftime("%Y%m%dT%H%M%SZ")
 
 
-def generate_ics(calendar_id, events):
+def generate_ics(calendar_id: str, events: list) -> str:
     """Generate ICS data for a given calendar and events"""
     ics = [
         "BEGIN:VCALENDAR",

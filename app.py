@@ -44,8 +44,7 @@ load_dotenv()
 @app.route("/")
 def home():
     """Home Page"""
-    sections = VALID_CALENDARS  # ['epgp17a', 'epgp17b', ...]
-    return render_template("index.html", sections=sections, domain=DOMAIN)
+    return render_template("index.html", sections=VALID_CALENDARS, domain=DOMAIN)
 
 
 @app.route("/<calendar_id>.ics")
@@ -69,8 +68,8 @@ def serve_calendar(calendar_id):
 def electives(term):
     """Electives List Page"""
     validate_term(term)
-
     electives = get_electives_list(term.upper())
+
     return render_template(
         "electives.html", electives=electives, term=term.lower(), domain=DOMAIN
     )
@@ -80,7 +79,6 @@ def electives(term):
 def elective_details(term, code):
     """Elective Details Page"""
     validate_term(term)
-
     schedule = get_elective_schedule(term.upper(), code)
 
     return render_template(
@@ -93,10 +91,9 @@ def serve_elective_calendar(term, code):
     """Serve Elective Calendars as ICS"""
 
     validate_term(term)
-
     events = handle_elective(term.upper(), code)
-
     ics_data = generate_ics(f"{term.lower()}_{code}", events)
+
     return Response(
         ics_data,
         mimetype="text/calendar",
