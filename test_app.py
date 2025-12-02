@@ -20,7 +20,7 @@ class TestApp:
     def test_valid_calendars(self):
         """Test if valid calendars are set correctly."""
         assert isinstance(VALID_CALENDARS, list)
-        assert len(VALID_CALENDARS) == 12
+        assert len(VALID_CALENDARS) == 14
         for calendar in VALID_CALENDARS:
             assert calendar.startswith("epgp17")
 
