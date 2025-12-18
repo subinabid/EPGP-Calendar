@@ -103,6 +103,36 @@ def serve_elective_calendar(term, code):
     )
 
 
+@app.route("/centres/clt.ics")
+def serve_clt_calendar():
+    """Custom calendar to serve Calicut Centre ICS"""
+    courses = [
+        "EECO-002",  # Subin
+        "EFAC-011A",
+        "EMM-006",
+        "EMM-014B",
+        "EIS-004",  # Mrudul
+        "EQMOM-003B",
+        "ESM-006",
+        "EFAC-009A",
+        "EQMOM-010",
+        "EHLAM-014",  # Nikhil
+        "ESM-009A",
+        "EMM-014A",
+        "EHLAM-008",
+        "EMM-021",
+    ]
+    events = []
+    for course in courses:
+        events.extend(handle_elective("Q5", course))
+    ics_data = generate_ics("clt", events)
+    return Response(
+        ics_data,
+        mimetype="text/calendar",
+        headers={"Content-Disposition": "attachment; filename=clt.ics"},
+    )
+
+
 ################################################################################
 # Entry Point
 ################################################################################
