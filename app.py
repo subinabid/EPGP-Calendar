@@ -76,7 +76,7 @@ def electives(term):
 
 
 @app.route("/<term>/<code>")
-def elective_details(term, code):
+def elective_details(term, code: str):
     """Elective Details Page"""
     validate_term(term)
     schedule = get_elective_schedule(term.upper(), code)
@@ -117,10 +117,10 @@ def serve_clt_calendar():
         "EFAC-009A",
         "EQMOM-010",
         "EHLAM-014",  # Nikhil
-        "ESM-009A",
-        "EMM-014A",
-        "EHLAM-008",
-        "EMM-021",
+        "ESM-009A",  # Nikhil + Roopesh
+        "EMM-014A",  # Nikhil + Roopesh
+        "EHLAM-008",  # Nikhil + Roopesh
+        "EMM-021",  # Nikhil + Roopesh
     ]
     events = []
     for course in courses:

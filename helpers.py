@@ -75,127 +75,127 @@ def get_general_events():
     return handle_events(csv_url)
 
 
-# def get_complete_class_schedule(tab_name: str) -> list[dict]:
-#     """Get schedule for a specific class"""
-#     # Build the CSV import URLs
-#     class_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab_name.upper()}"
-#     general_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=GENERAL"
-#     exam_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=EXAMS"
+def handle_event_dict(
+    events_list: list[dict], includeSessionCount=False, elective=False
+) -> list[dict]:
+    """Handle events from a list of event dicts
 
-#     # Fetch the CSV content as a dict
-#     reader_class = get_csv(class_url)
-#     reader_general = get_csv(general_url)
-#     reader_exam = get_csv(exam_url)
-
-#     schedule = list()
-
-#     for row in reader_class:
-#         schedule.append(row)
-#     for row in reader_general:
-#         schedule.append(row)
-#     for row in reader_exam:
-#         schedule.append(row)
-
-#     return schedule
-
-
-def handle_events(csv_url, includeSessionCount=False):
-    """Handle events from the CSV URL"""
-
-    # Fetch the CSV content
-    response = requests.get(csv_url)
-    response.raise_for_status()
-
-    # Parse CSV rows
-    reader = csv.DictReader(response.text.splitlines())
+    Args:
+        events_list: List of event dictionaries
+    Returns:
+        List of event dictionaries
+    """
     events = []
-
-    for row in reader:
-        try:
-            # Handle buffers and holidays
-            if row["Code"] == "" or row["Session"] == "":
-                # print(f"Code or Session Error: Skipping Empty row: {row}")
-                continue
-
-            # Extract and convert fields
-            event_date = row.get("Date", "").strip()
-            event_time = row.get("Time", "").strip()
-
-            # Split the time range
-            if "to" in event_time:
-                # Assuming the time is in the format "9:00 AM to 11:45 AM"
-                start_str, end_str = [t.strip() for t in event_time.split("to")]
-            elif "-" in event_time:
-                # Assuming the time is in the format "9:00 AM - 11:45 AM"
-                start_str, end_str = [t.strip() for t in event_time.split("-")]
-            else:
-                print(f"Time format error: {event_time}")
-                print(f"Skipping row: {row} \nReason: Invalid time format")
-                continue
-
+    if events_list:
+        for row in events_list:
             try:
-                start_ist = datetime.strptime(
-                    f"{event_date} {start_str}", "%d-%b-%y %I:%M %p"
-                )
-            except ValueError:
-                # If the first format fails, try the second format
-                # This is a fallback in case the date format is different
-                start_ist = datetime.strptime(
-                    f"{event_date} {start_str}", "%d-%B-%y %I:%M %p"
-                )
+                # Handle buffers and holidays
+                if row["Code"] == "" or row["Session"] == "":
+                    continue
 
-            try:
-                end_ist = datetime.strptime(
-                    f"{event_date} {end_str}", "%d-%b-%y %I:%M %p"
-                )
-            except ValueError:
-                end_ist = datetime.strptime(
-                    f"{event_date} {end_str}", "%d-%B-%y %I:%M %p"
-                )
+                # Extract and convert fields
+                event_date = row.get("Date", "").strip()
+                event_time = row.get("Time", "").strip().replace(".", ":")
 
-            # Convert IST to UTC (subtract 5 hours 30 minutes)
-            start_utc = start_ist - timedelta(hours=5, minutes=30)
-            end_utc = end_ist - timedelta(hours=5, minutes=30)
+                # Split the time range
+                if "to" in event_time:
+                    # Assuming the time is in the format "9:00 AM to 11:45 AM"
+                    start_str, end_str = [t.strip() for t in event_time.split("to")]
+                elif "-" in event_time:
+                    # Assuming the time is in the format "9:00 AM - 11:45 AM"
+                    start_str, end_str = [t.strip() for t in event_time.split("-")]
+                else:
+                    print(f"Time format error: {event_time}")
+                    print(f"Skipping row: {row} \nReason: Invalid time format")
+                    continue
 
-            # Format for ICS (UTC time, Z suffix)
-            dtstart = start_utc.strftime("%Y%m%dT%H%M%SZ")
-            dtend = end_utc.strftime("%Y%m%dT%H%M%SZ")
+                try:
+                    start_ist = datetime.strptime(
+                        f"{event_date} {start_str}", "%d-%b-%y %I:%M %p"
+                    )
+                except ValueError:
+                    # If the first format fails, try the second format
+                    # This is a fallback in case the date format is different
+                    start_ist = datetime.strptime(
+                        f"{event_date} {start_str}", "%d-%B-%y %I:%M %p"
+                    )
 
-            # Get location info
-            location = row.get("Location", "").strip()
-            if not location:
-                location = "Online"
+                try:
+                    end_ist = datetime.strptime(
+                        f"{event_date} {end_str}", "%d-%b-%y %I:%M %p"
+                    )
+                except ValueError:
+                    end_ist = datetime.strptime(
+                        f"{event_date} {end_str}", "%d-%B-%y %I:%M %p"
+                    )
 
-            # Include session count in the title if requested
-            if includeSessionCount:
-                session_count = row.get("Session", "").strip()
-                if (
-                    session_count
-                    and session_count.isdigit()
-                    and int(session_count) < 30  # Sessions < 30 are regular sessions
-                ):
-                    title = f"{row['Course Name'].strip()} - Session {session_count}"
+                # Convert IST to UTC (subtract 5 hours 30 minutes)
+                start_utc = start_ist - timedelta(hours=5, minutes=30)
+                end_utc = end_ist - timedelta(hours=5, minutes=30)
+
+                # Format for ICS (UTC time, Z suffix)
+                dtstart = start_utc.strftime("%Y%m%dT%H%M%SZ")
+                dtend = end_utc.strftime("%Y%m%dT%H%M%SZ")
+                # Get location info
+                location = row.get("Location", "").strip()
+                if not location:
+                    location = "Online"
+
+                # Include session count in the title if requested
+                if includeSessionCount:
+                    session_count = row.get("Session", "").strip()
+                    if (
+                        session_count
+                        and session_count.isdigit()
+                        and int(session_count)
+                        < 30  # Sessions < 30 are regular sessions
+                    ):
+                        title = (
+                            f"{row['Course Name'].strip()} - Session {session_count}"
+                        )
+                    else:
+                        title = row["Course Name"].strip()
                 else:
                     title = row["Course Name"].strip()
-            else:
-                title = row["Course Name"].strip()
 
-            event = {
-                "id": f"{row['Code'].strip()}-{row['Sec']}-{row['Session'].strip()}@iimcal.sabid.in",
-                "title": title,
-                "description": title,
-                "location": location,
-                "start": dtstart,
-                "end": dtend,
-            }
+                # Create event dictionary
 
-            events.append(event)
+                if elective:
+                    event_id = f"{row['Code'].strip()}-{row['Session'].strip()}"
+                else:
+                    event_id = (
+                        f"{row['Code'].strip()}-{row['Sec']}-{row['Session'].strip()}"
+                    )
 
-        except Exception as e:
-            # Optionally log or skip invalid rows
-            print(f"Skipping invalid row: {row}\nReason: {e}")
-
+                event = {
+                    "id": f"{event_id}@iimcal.sabid.in",
+                    "title": title,
+                    "description": title,
+                    "location": location,
+                    "start": dtstart,
+                    "end": dtend,
+                }
+                events.append(event)
+            except Exception as e:
+                # Optionally log or skip invalid rows
+                print(f"Skipping invalid row: {row}\nReason: {e}")
     return events
+
+
+def handle_events(csv_url, includeSessionCount=False) -> list[dict]:
+    """Handle events from the CSV URL
+
+    Args:
+        csv_url: URL of the CSV to fetch
+        includeSessionCount: Whether to include session count in the event title
+
+    Returns:
+        List of event dictionaries
+    """
+
+    # Fetch the parsed CSV content as dict
+    reader = get_csv(csv_url)
+    return handle_event_dict(list(reader), includeSessionCount)
 
 
 ################################################################################
@@ -242,72 +242,24 @@ def get_elective_schedule(term: str, code: str) -> list[dict]:
     # Get schedule for the specific elective code
     for row in reader:
         if row.get("Code1", "").strip() == code:
+            row["Code"] = row.get("Code1", "").strip()
             schedule.append(row)
 
     if not schedule:
         abort(404, description="Elective not found")
-
     return schedule
 
 
 def handle_elective(term: str, code: str) -> list[dict]:
-    """Handle elective events from the CSV URL"""
+    """Handle elective events for a given term and code"""
 
     # Fetch the CSV content as dict
     reader = get_elective_schedule(term, code)
-    events = []
-
     for row in reader:
-        try:
-            # Extract and convert fields
-            event_date = row.get("Date", "").strip()
-            event_time = row.get("Time", "").strip()
-
-            # Split the time range
-            if "to" in event_time:
-                start_str, end_str = [t.strip() for t in event_time.split("to")]
-            elif "-" in event_time:
-                start_str, end_str = [t.strip() for t in event_time.split("-")]
-            else:
-                print(f"Time format error: {event_time}")
-                print(f"Skipping row: {row} \nReason: Invalid time format")
-                continue
-
-            start_ist = datetime.strptime(
-                f"{event_date} {start_str}", "%d-%m-%Y %I:%M %p"
-            )
-            end_ist = datetime.strptime(f"{event_date} {end_str}", "%d-%m-%Y %I:%M %p")
-
-            # Convert IST to UTC (subtract 5 hours 30 minutes)
-            start_utc = start_ist - timedelta(hours=5, minutes=30)
-            end_utc = end_ist - timedelta(hours=5, minutes=30)
-
-            # Format for ICS (UTC time, Z suffix)
-            dtstart = start_utc.strftime("%Y%m%dT%H%M%SZ")
-            dtend = end_utc.strftime("%Y%m%dT%H%M%SZ")
-
-            location = row.get("Location", "").strip()
-            if not location:
-                location = "Online"
-
-            title = row["Course"].strip()
-
-            event = {
-                "id": f"{row['Code1'].strip()}-{row['Session'].strip()}@iimcal.sabid.in",
-                "title": title,
-                "description": title,
-                "location": location,
-                "start": dtstart,
-                "end": dtend,
-            }
-
-            events.append(event)
-
-        except Exception as e:
-            print(f"Skipping invalid row: {row}\nReason: {e}")
-            pass
-
-    return events
+        row["Date"] = datetime.strptime(
+            row.get("Date", "").strip(), "%d-%m-%Y"
+        ).strftime("%d-%b-%y")
+    return handle_event_dict(list(reader), includeSessionCount=True, elective=True)
 
 
 ################################################################################
@@ -316,6 +268,7 @@ def handle_elective(term: str, code: str) -> list[dict]:
 
 
 def format_ics_datetime(dt_str: str) -> str:
+    """Format datetime string to ICS format (UTC)"""
     dt = datetime.fromisoformat(dt_str)
     return dt.astimezone(pytz.UTC).strftime("%Y%m%dT%H%M%SZ")
 
