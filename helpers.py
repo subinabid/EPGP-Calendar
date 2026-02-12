@@ -219,7 +219,7 @@ def get_electives_list(term: str) -> dict:
         if code and not electives.get(code):
             electives[code] = {
                 "area": row.get("Area", "").strip(),
-                "course": row.get("Course", "").strip(),
+                "course": row.get("Course Name", "").strip(),
                 "faculty": [row.get("Faculty", "").strip()],
                 "track": row.get("Track", "").strip(),
             }
