@@ -9,6 +9,7 @@
 </head>
 
 <body class="bg-gray-50 text-gray-800 font-sans p-6">
+    <!-- Template for listing all electives in a term-->
     <div class="max-w-7xl mx-auto">
         <h1 class="text-3xl font-bold mb-4 text-center">📅 EPGP17 Calendar Feeds</h1>
         <p class="mb-6 text-center text-gray-600">Subscribe to your elective’s live calendar feed below:</p>
@@ -60,7 +61,7 @@
                         <td class="px-4 py-2">{{ loop.index }}</td>
                         <td class="px-4 py-2"><a class="text-green-600" href="/{{ term }}/{{ code}}"> {{ code }}</a>
                         </td>
-                        <td class="px-4 py-2">{{ details.course }}</td>
+                        <td class="px-4 py-2"> {{ details.course }}</td>
                         <td class="px-4 py-2">{{ details.area }}</td>
                         <td class="px-4 py-2">
                             {% for faculty in details.faculty %}
