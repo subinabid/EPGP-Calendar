@@ -47,90 +47,90 @@ def home():
     return render_template("index.html", sections=VALID_CALENDARS, domain=DOMAIN)
 
 
-@app.route("/<calendar_id>.ics")
-def serve_calendar(calendar_id):
-    """Serve Section Calendars as ICS"""
-    validate_calendar(calendar_id)
+# @app.route("/<calendar_id>.ics")
+# def serve_calendar(calendar_id):
+#     """Serve Section Calendars as ICS"""
+#     validate_calendar(calendar_id)
 
-    events = get_classes(calendar_id)
-    events.extend(get_exams())
-    events.extend(get_general_events())
-    ics_data = generate_ics(calendar_id, events)
+#     events = get_classes(calendar_id)
+#     events.extend(get_exams())
+#     events.extend(get_general_events())
+#     ics_data = generate_ics(calendar_id, events)
 
-    return Response(
-        ics_data,
-        mimetype="text/calendar",
-        headers={"Content-Disposition": f"attachment; filename={calendar_id}.ics"},
-    )
-
-
-@app.route("/electives/<term>")
-def electives(term):
-    """Electives List Page"""
-    validate_term(term)
-    electives = get_electives_list(term.upper())
-
-    return render_template(
-        "electives.html", electives=electives, term=term.lower(), domain=DOMAIN
-    )
+#     return Response(
+#         ics_data,
+#         mimetype="text/calendar",
+#         headers={"Content-Disposition": f"attachment; filename={calendar_id}.ics"},
+#     )
 
 
-@app.route("/<term>/<code>")
-def elective_details(term, code: str):
-    """Elective Details Page"""
-    validate_term(term)
-    schedule = get_elective_schedule(term.upper(), code)
+# @app.route("/electives/<term>")
+# def electives(term):
+#     """Electives List Page"""
+#     validate_term(term)
+#     electives = get_electives_list(term.upper())
 
-    return render_template(
-        "course.html", schedule=schedule, term=term.lower(), domain=DOMAIN
-    )
-
-
-@app.route("/<term>/<code>.ics")
-def serve_elective_calendar(term, code):
-    """Serve Elective Calendars as ICS"""
-
-    validate_term(term)
-    events = handle_elective(term.upper(), code)
-    ics_data = generate_ics(f"{term.lower()}_{code}", events)
-
-    return Response(
-        ics_data,
-        mimetype="text/calendar",
-        headers={
-            "Content-Disposition": f"attachment; filename={term.lower()}_{code}.ics"
-        },
-    )
+#     return render_template(
+#         "electives.html", electives=electives, term=term.lower(), domain=DOMAIN
+#     )
 
 
-@app.route("/centres/clt.ics")
-def serve_clt_calendar():
-    """Custom calendar to serve Calicut Centre ICS"""
-    courses = [
-        "EECO-002",  # Subin
-        "EFAC-011A",
-        "EMM-006",
-        "EMM-014B",
-        "EIS-004",  # Mrudul
-        "EQMOM-003B",
-        "ESM-006",
-        "EFAC-009A",
-        "EQMOM-010",
-        "EHLAM-014",  # Nikhil
-        "ESM-009A",  # Nikhil + Roopesh
-        "EMM-014A",  # Nikhil + Roopesh
-        "EHLAM-008",  # Nikhil + Roopesh
-        "EMM-021",  # Nikhil + Roopesh
-    ]
-    events = []
-    for course in courses:
-        events.extend(handle_elective("Q5", course))
-    ics_data = generate_ics("clt", events)
-    return Response(
-        ics_data,
-        mimetype="text/calendar",
-        headers={"Content-Disposition": "attachment; filename=clt.ics"},
-    )
+# @app.route("/<term>/<code>")
+# def elective_details(term, code: str):
+#     """Elective Details Page"""
+#     validate_term(term)
+#     schedule = get_elective_schedule(term.upper(), code)
+
+#     return render_template(
+#         "course.html", schedule=schedule, term=term.lower(), domain=DOMAIN
+#     )
+
+
+# @app.route("/<term>/<code>.ics")
+# def serve_elective_calendar(term, code):
+#     """Serve Elective Calendars as ICS"""
+
+#     validate_term(term)
+#     events = handle_elective(term.upper(), code)
+#     ics_data = generate_ics(f"{term.lower()}_{code}", events)
+
+#     return Response(
+#         ics_data,
+#         mimetype="text/calendar",
+#         headers={
+#             "Content-Disposition": f"attachment; filename={term.lower()}_{code}.ics"
+#         },
+#     )
+
+
+# @app.route("/centres/clt.ics")
+# def serve_clt_calendar():
+#     """Custom calendar to serve Calicut Centre ICS"""
+#     courses = [
+#         "EECO-002",  # Subin
+#         "EFAC-011A",
+#         "EMM-006",
+#         "EMM-014B",
+#         "EIS-004",  # Mrudul
+#         "EQMOM-003B",
+#         "ESM-006",
+#         "EFAC-009A",
+#         "EQMOM-010",
+#         "EHLAM-014",  # Nikhil
+#         "ESM-009A",  # Nikhil + Roopesh
+#         "EMM-014A",  # Nikhil + Roopesh
+#         "EHLAM-008",  # Nikhil + Roopesh
+#         "EMM-021",  # Nikhil + Roopesh
+#     ]
+#     events = []
+#     for course in courses:
+#         events.extend(handle_elective("Q5", course))
+#     ics_data = generate_ics("clt", events)
+#     return Response(
+#         ics_data,
+#         mimetype="text/calendar",
+#         headers={"Content-Disposition": "attachment; filename=clt.ics"},
+#     )
 
 
 ################################################################################
